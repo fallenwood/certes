@@ -3,8 +3,8 @@
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
     <LangVersion>Latest</LangVersion>
-    <SignAssembly>true</SignAssembly>
-    <PublicSign Condition="'$(TargetFramework)' != 'net462'">True</PublicSign>
+    <SignAssembly>False</SignAssembly>
+    <PublicSign>False</PublicSign>
     <AssemblyOriginatorKeyFile>../../misc/certes.snk</AssemblyOriginatorKeyFile>
     <AssemblyVersion>3.0.0</AssemblyVersion>
   </PropertyGroup>

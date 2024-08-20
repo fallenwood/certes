@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 using Certes.Acme.Resource;
 using Moq;
@@ -16,18 +17,18 @@ namespace Certes.Acme
         {
             var accountLoc = new Uri("https://acme.d/acct/1");
             var httpMock = new Mock<IAcmeHttpClient>();
-            httpMock.Setup(m => m.Get<Directory>(It.IsAny<Uri>()))
+            httpMock.Setup(m => m.Get<Directory>(It.IsAny<Uri>(), It.IsAny<JsonTypeInfo<Directory>>()))
                 .ReturnsAsync(new AcmeHttpResponse<Directory>(
                     accountLoc, MockDirectoryV2, null, null));
             httpMock.Setup(
-                m => m.Post<Account>(MockDirectoryV2.NewAccount, It.IsAny<object>()))
+                m => m.Post<Account>(MockDirectoryV2.NewAccount, It.IsAny<object>(), It.IsAny<JsonTypeInfo>(), It.IsAny<JsonTypeInfo<Account>>()))
                 .ReturnsAsync(new AcmeHttpResponse<Account>(
                     accountLoc, new Account
                     {
                         Status = AccountStatus.Valid
                     }, null, null));
             httpMock.Setup(
-                m => m.Post<Account>(MockDirectoryV2.KeyChange, It.IsAny<object>()))
+                m => m.Post<Account>(MockDirectoryV2.KeyChange, It.IsAny<object>(), It.IsAny<JsonTypeInfo>(), It.IsAny<JsonTypeInfo<Account>>()))
                 .ReturnsAsync(new AcmeHttpResponse<Account>(
                     accountLoc, new Account
                     {
@@ -79,11 +80,11 @@ namespace Certes.Acme
             var httpClientMock = new Mock<IAcmeHttpClient>();
             var certData = Encoding.UTF8.GetBytes("cert");
 
-            httpClientMock.Setup(m => m.Get<Directory>(directoryUri))
+            httpClientMock.Setup(m => m.Get<Directory>(directoryUri, It.IsAny<JsonTypeInfo<Directory>>()))
                 .ReturnsAsync(new AcmeHttpResponse<Directory>(directoryUri, Helper.MockDirectoryV2, default, default));
             httpClientMock.Setup(m => m.ConsumeNonce()).ReturnsAsync("nonce");
 
-            httpClientMock.Setup(m => m.Post<string>(Helper.MockDirectoryV2.RevokeCert, It.IsAny<object>()))
+            httpClientMock.Setup(m => m.Post<string>(Helper.MockDirectoryV2.RevokeCert, It.IsAny<object>(), It.IsAny<JsonTypeInfo>(), It.IsAny<JsonTypeInfo<string>>()))
                 .ReturnsAsync(new AcmeHttpResponse<string>(default, default, default, default));
 
             var certKey = KeyFactory.NewKey(KeyAlgorithm.ES256);

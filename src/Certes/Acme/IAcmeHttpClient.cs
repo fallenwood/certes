@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 using Certes.Jws;
 using Certes.Properties;
@@ -24,16 +25,19 @@ namespace Certes.Acme
         /// <typeparam name="T">The type of expected result</typeparam>
         /// <param name="uri">The URI.</param>
         /// <param name="payload">The payload.</param>
+        /// <param name="requestJsonTypeInfo"></param>
+        /// <param name="responseJsonTypeInfo"></param>
         /// <returns>The response from ACME server.</returns>
-        Task<AcmeHttpResponse<T>> Post<T>(Uri uri, object payload);
+        Task<AcmeHttpResponse<T>> Post<T>(Uri uri, object payload, JsonTypeInfo requestJsonTypeInfo, JsonTypeInfo<T> responseJsonTypeInfo);
 
         /// <summary>
         /// Gets the data from specified URI.
         /// </summary>
         /// <typeparam name="T">The type of expected result</typeparam>
         /// <param name="uri">The URI.</param>
+        /// <param name="responseJsonTypeInfo"></param>
         /// <returns>The response from ACME server.</returns>
-        Task<AcmeHttpResponse<T>> Get<T>(Uri uri);
+        Task<AcmeHttpResponse<T>> Get<T>(Uri uri, JsonTypeInfo<T> responseJsonTypeInfo);
     }
 
     /// <summary>
@@ -50,6 +54,8 @@ namespace Certes.Acme
         /// <param name="location">The URI.</param>
         /// <param name="entity">The payload.</param>
         /// <param name="ensureSuccessStatusCode">if set to <c>true</c>, throw exception if the request failed.</param>
+        /// <param name="requestJsonTypeInfo"></param>
+        /// <param name="responseJsonTypeInfo"></param>
         /// <returns>
         /// The response from ACME server.
         /// </returns>
@@ -60,18 +66,19 @@ namespace Certes.Acme
             IAcmeContext context,
             Uri location,
             object entity,
-            bool ensureSuccessStatusCode)
+            bool ensureSuccessStatusCode,
+            JsonTypeInfo requestJsonTypeInfo,
+            JsonTypeInfo<T> responseJsonTypeInfo)
         {
-
-            var payload = await context.Sign(entity, location);
-            var response = await client.Post<T>(location, payload);
+            var payload = await context.Sign(entity, location, requestJsonTypeInfo);
+            var response = await client.Post<T>(location, payload, AcmeJsonSerializerContext.Unindented.JsonWebKey, responseJsonTypeInfo);
             var retryCount = context.BadNonceRetryCount;
             while (response.Error?.Status == System.Net.HttpStatusCode.BadRequest &&
                 response.Error.Type?.CompareTo("urn:ietf:params:acme:error:badNonce") == 0 &&
                 retryCount-- > 0)
             {
-                payload = await context.Sign(entity, location);
-                response = await client.Post<T>(location, payload);
+                payload = await context.Sign(entity, location, requestJsonTypeInfo);
+                response = await client.Post<T>(location, payload, AcmeJsonSerializerContext.Unindented.JsonWebKey, responseJsonTypeInfo);
             }
 
             if (ensureSuccessStatusCode && response.Error != null)
@@ -93,6 +100,8 @@ namespace Certes.Acme
         /// <param name="location">The URI.</param>
         /// <param name="entity">The payload.</param>
         /// <param name="ensureSuccessStatusCode">if set to <c>true</c>, throw exception if the request failed.</param>
+        /// <param name="requestJsonTypeInfo"></param>
+        /// <param name="responseJsonTypeInfo"></param>
         /// <param name="retryCount">Number of retries on badNonce errors (default = 1)</param>
         /// <returns>
         /// The response from ACME server.
@@ -105,17 +114,19 @@ namespace Certes.Acme
             Uri location,
             object entity,
             bool ensureSuccessStatusCode,
+            JsonTypeInfo requestJsonTypeInfo,
+            JsonTypeInfo<T> responseJsonTypeInfo,
             int retryCount = 1)
         {
-            var payload = jwsSigner.Sign(entity, url: location, nonce: await client.ConsumeNonce());
-            var response = await client.Post<T>(location, payload);
+            var payload = jwsSigner.Sign(entity, url: location, nonce: await client.ConsumeNonce(), jsonTypeInfo: requestJsonTypeInfo);
+            var response = await client.Post<T>(location, payload, AcmeJsonSerializerContext.Unindented.JwsPayload, responseJsonTypeInfo);
 
             while (response.Error?.Status == System.Net.HttpStatusCode.BadRequest &&
                 response.Error.Type?.CompareTo("urn:ietf:params:acme:error:badNonce") == 0 &&
                 retryCount-- > 0)
             {
-                payload = jwsSigner.Sign(entity, url: location, nonce: await client.ConsumeNonce());
-                response = await client.Post<T>(location, payload);
+                payload = jwsSigner.Sign(entity, url: location, nonce: await client.ConsumeNonce(), jsonTypeInfo: requestJsonTypeInfo);
+                response = await client.Post<T>(location, payload, AcmeJsonSerializerContext.Unindented.JwsPayload, responseJsonTypeInfo);
             }
 
             if (ensureSuccessStatusCode && response.Error != null)
