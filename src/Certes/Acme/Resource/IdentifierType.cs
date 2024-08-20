@@ -1,19 +1,16 @@
-﻿using System.Runtime.Serialization;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
+﻿namespace Certes.Acme.Resource;
 
-namespace Certes.Acme.Resource
+using System.Runtime.Serialization;
+
+/// <summary>
+/// Represents type of <see cref="Identifier"/>.
+/// </summary>
+//[JsonConverter(typeof(StringEnumConverter))]
+public enum IdentifierType
 {
     /// <summary>
-    /// Represents type of <see cref="Identifier"/>.
+    /// The DNS type.
     /// </summary>
-    [JsonConverter(typeof(StringEnumConverter))]
-    public enum IdentifierType
-    {
-        /// <summary>
-        /// The DNS type.
-        /// </summary>
-        [EnumMember(Value = "dns")]
-        Dns,
-    }
+    [EnumMember(Value = "dns")]
+    Dns,
 }

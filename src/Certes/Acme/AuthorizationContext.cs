@@ -1,55 +1,55 @@
-﻿using System;
+﻿namespace Certes.Acme;
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Certes.Acme.Resource;
 
-namespace Certes.Acme
+
+/// <summary>
+/// Represents the context for ACME authorization operations.
+/// </summary>
+/// <seealso cref="Certes.Acme.IAuthorizationContext" />
+internal class AuthorizationContext : EntityContext<Authorization>, IAuthorizationContext
 {
     /// <summary>
-    /// Represents the context for ACME authorization operations.
+    /// Initializes a new instance of the <see cref="AuthorizationContext"/> class.
     /// </summary>
-    /// <seealso cref="Certes.Acme.IAuthorizationContext" />
-    internal class AuthorizationContext : EntityContext<Authorization>, IAuthorizationContext
+    /// <param name="context">The context.</param>
+    /// <param name="location">The location.</param>
+    public AuthorizationContext(
+        IAcmeContext context,
+        Uri location)
+        : base(context, location, AcmeJsonSerializerContext.Unindented.Authorization)
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AuthorizationContext"/> class.
-        /// </summary>
-        /// <param name="context">The context.</param>
-        /// <param name="location">The location.</param>
-        public AuthorizationContext(
-            IAcmeContext context,
-            Uri location)
-            : base(context, location)
-        {
-        }
+    }
 
-        /// <summary>
-        /// Gets the challenges for this authorization.
-        /// </summary>
-        /// <returns>
-        /// The list fo challenges.
-        /// </returns>
-        public async Task<IEnumerable<IChallengeContext>> Challenges()
-        {
-            var authz = await Resource();
-            return authz
-                .Challenges?
-                .Select(c => new ChallengeContext(Context, c.Url, c.Type, c.Token)) ??
-                Enumerable.Empty<IChallengeContext>();
-        }
+    /// <summary>
+    /// Gets the challenges for this authorization.
+    /// </summary>
+    /// <returns>
+    /// The list fo challenges.
+    /// </returns>
+    public async Task<IEnumerable<IChallengeContext>> Challenges()
+    {
+        var authz = await Resource();
+        return authz
+            .Challenges?
+            .Select(c => new ChallengeContext(Context, c.Url, c.Type, c.Token)) ??
+            Enumerable.Empty<IChallengeContext>();
+    }
 
-        /// <summary>
-        /// Deactivates this authzorization.
-        /// </summary>
-        /// <returns>
-        /// The authorization deactivated.
-        /// </returns>
-        public async Task<Authorization> Deactivate()
-        {
-            var payload = new Authorization { Status = AuthorizationStatus.Deactivated };
-            var resp = await Context.HttpClient.Post<Authorization>(Context, Location, payload, true);
-            return resp.Resource;
-        }
+    /// <summary>
+    /// Deactivates this authzorization.
+    /// </summary>
+    /// <returns>
+    /// The authorization deactivated.
+    /// </returns>
+    public async Task<Authorization> Deactivate()
+    {
+        var payload = new Authorization { Status = AuthorizationStatus.Deactivated };
+        var resp = await Context.HttpClient.Post<Authorization>(Context, Location, payload, true, AcmeJsonSerializerContext.Unindented.Uri, AcmeJsonSerializerContext.Unindented.Authorization);
+        return resp.Resource;
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 using Certes.Acme;
 using Certes.Acme.Resource;
@@ -106,8 +107,9 @@ namespace Certes
         /// </summary>
         /// <param name="entity">The data to sign.</param>
         /// <param name="uri">The URI for the request.</param>
+        /// <param name="jsonTypeInfo"></param>
         /// <returns>The JWS payload.</returns>
-        Task<JwsPayload> Sign(object entity, Uri uri);
+        Task<JwsPayload> Sign(object entity, Uri uri, JsonTypeInfo jsonTypeInfo);
 
         /// <summary>
         /// Gets the order by specified location.
