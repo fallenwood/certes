@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Threading.Tasks;
+using Certes.Acme.Models;
 using Certes.Acme.Resource;
 using Certes.Json;
 using Certes.Jws;
@@ -12,18 +13,13 @@ namespace Certes.Acme
     /// Represents the context for ACME account operations.
     /// </summary>
     /// <seealso cref="Certes.Acme.IAccountContext" />
-    internal class AccountContext : EntityContext<Account>, IAccountContext
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="AccountContext" /> class.
+    /// </remarks>
+    /// <param name="context">The context.</param>
+    /// <param name="location">The location.</param>
+    internal class AccountContext(IAcmeContext context, Uri location) : EntityContext<Account>(context, location), IAccountContext
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="AccountContext" /> class.
-        /// </summary>
-        /// <param name="context">The context.</param>
-        /// <param name="location">The location.</param>
-        public AccountContext(IAcmeContext context, Uri location)
-            : base(context, location)
-        {
-        }
-
         /// <summary>
         /// Deactivates the current account.
         /// </summary>
@@ -33,7 +29,7 @@ namespace Certes.Acme
         public async Task<Account> Deactivate()
         {
             var payload = new Account { Status = AccountStatus.Deactivated };
-            var resp = await Context.HttpClient.Post<Account>(Context, Location, payload, true);
+            var resp = await Context.HttpClient.Post(Context, Location, payload, true, AcmeJsonContext.Default.Account);
             return resp.Resource;
         }
 
@@ -70,7 +66,7 @@ namespace Certes.Acme
                 account.TermsOfServiceAgreed = true;
             }
 
-            var response = await Context.HttpClient.Post<Account>(Context, location, account, true);
+            var response = await Context.HttpClient.Post(Context, location, account, true, AcmeJsonContext.Default.Account);
             return response.Resource;
         }
 
@@ -93,19 +89,21 @@ namespace Certes.Acme
             
             if (eabKeyId != null && eabKey != null)
             {
-                var header = new
+                var header = new AcmeHeader
                 {
-                    alg = eabKeyAlg?.ToUpper() ?? "HS256",
-                    kid = eabKeyId,
-                    url = endpoint
+                    Alg = eabKeyAlg?.ToUpper() ?? "HS256",
+                    Kid = eabKeyId,
+                    Url = endpoint,
                 };
 
-                var headerJson = Newtonsoft.Json.JsonConvert.SerializeObject(header, Newtonsoft.Json.Formatting.None, JsonUtil.CreateSettings());
+                // TODO: Newtonsoft.Json.Formatting.None, JsonUtil.CreateSettings()
+                var headerJson = System.Text.Json.JsonSerializer.Serialize(header, AcmeJsonContext.Default.AcmeHeader);
                 var protectedHeaderBase64 = JwsConvert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(headerJson));
 
                 var accountKeyBase64 = JwsConvert.ToBase64String(
                     System.Text.Encoding.UTF8.GetBytes(
-                        Newtonsoft.Json.JsonConvert.SerializeObject(context.AccountKey.JsonWebKey, Newtonsoft.Json.Formatting.None)
+                        // Newtonsoft.Json.Formatting.None
+                        System.Text.Json.JsonSerializer.Serialize(context.AccountKey.JsonWebKey, AcmeJsonContext.Default.JsonWebKey)
                         )
                     );
 
@@ -114,7 +112,7 @@ namespace Certes.Acme
                 // eab signature is the hash of the header and account key, using the eab key
                 byte[] signatureHash;
 
-                switch (header.alg)
+                switch (header.Alg)
                 {
                     case "HS512":
                         using(var hs512 = new HMACSHA512(JwsConvert.FromBase64String(eabKey))) signatureHash = hs512.ComputeHash(signingBytes);
@@ -137,7 +135,13 @@ namespace Certes.Acme
                 };
             }
 
-            return await context.HttpClient.Post<Account>(jws, endpoint, body, ensureSuccessStatusCode);
+            return await context.HttpClient.Post(
+                jws,
+                endpoint,
+                body,
+                ensureSuccessStatusCode,
+                AcmeJsonContext.Default.Account,
+                AcmeJsonContext.Default.Account);
         }
     }
 }

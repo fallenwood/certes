@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 using Certes.Acme;
+using Certes.Acme.Models;
 using Certes.Acme.Resource;
 using Certes.Jws;
 using Identifier = Certes.Acme.Resource.Identifier;
@@ -96,16 +98,16 @@ namespace Certes
             var location = await Account().Location();
             
             var newKey = key ?? KeyFactory.NewKey(defaultKeyType);
-            var keyChange = new
+            var keyChange = new KeyChange
             {
-                account = location,
-                oldKey = AccountKey.JsonWebKey,
+                Account = location,
+                OldKey = AccountKey.JsonWebKey,
             };
 
             var jws = new JwsSigner(newKey);
-            var body = jws.Sign(keyChange, url: endpoint);
+            var body = jws.Sign(keyChange, AcmeJsonContext.Default.KeyChange, url: endpoint);
 
-            var resp = await HttpClient.Post<Account>(this, endpoint, body, true);
+            var resp = await HttpClient.Post(this, endpoint, body, true, AcmeJsonContext.Default.Account);
 
             AccountKey = newKey;
             return resp.Resource;
@@ -139,7 +141,7 @@ namespace Certes
         {
             if (directory == null)
             {
-                var resp = await HttpClient.Get<Directory>(DirectoryUri);
+                var resp = await HttpClient.Get<Directory>(DirectoryUri, AcmeJsonContext.Default.Directory);
                 directory = resp.Resource;
             }
 
@@ -168,7 +170,7 @@ namespace Certes
             if (certificatePrivateKey != null)
             {
                 var jws = new JwsSigner(certificatePrivateKey);
-                await HttpClient.Post<string>(jws, endpoint, body, true);
+                await HttpClient.Post(jws, endpoint, body, true, AcmeJsonContext.Default.CertificateRevocation, AcmeJsonContext.Default.String);
             }
             else
             {
@@ -206,15 +208,17 @@ namespace Certes
         /// <summary>
         /// Signs the data with account key.
         /// </summary>
+        /// <typeparam name="T"></typeparam>
         /// <param name="entity">The data to sign.</param>
         /// <param name="uri">The URI for the request.</param>
+        /// <param name="jsonTypeInfo"></param>
         /// <returns>The JWS payload.</returns>
-        public async Task<JwsPayload> Sign(object entity, Uri uri)
+        public async Task<JwsPayload> Sign<T>(T entity, Uri uri, JsonTypeInfo<T> jsonTypeInfo)
         {
             var nonce = await HttpClient.ConsumeNonce();
             var location = await Account().Location();
             var jws = new JwsSigner(AccountKey);
-            return jws.Sign(entity, location, uri, nonce);
+            return jws.Sign(entity, jsonTypeInfo, location, uri, nonce);
         }
 
         /// <summary>
