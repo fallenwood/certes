@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Certes\Certes.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\test\Certes.Tests\Keys.cs" Link="Keys.cs" />
+  </ItemGroup>
+</Project>

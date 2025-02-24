@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Certes\Certes.csproj" />
+    <ProjectReference Include="..\Certs.Mock\Certs.Mock.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\test\Certes.Tests\Keys.cs" Link="Keys.cs" />
+  </ItemGroup>
+</Project>

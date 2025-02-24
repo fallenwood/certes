@@ -8,7 +8,7 @@ using Microsoft.Azure.Management.ResourceManager.Fluent.Authentication;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Core;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using static Certes.Func.Helper;
+using static Certes.Helper;
 
 namespace Certes.Func
 {
